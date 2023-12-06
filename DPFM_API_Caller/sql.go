@@ -4,6 +4,7 @@ import (
 	dpfm_api_input_reader "data-platform-api-address-deletes-rmq-kube/DPFM_API_Input_Reader"
 	dpfm_api_output_formatter "data-platform-api-address-deletes-rmq-kube/DPFM_API_Output_Formatter"
 	"fmt"
+	"strings"
 
 	"github.com/latonaio/golang-logging-library-for-data-platform/logger"
 )
@@ -12,12 +13,19 @@ func (c *DPFMAPICaller) AddressRead(
 	input *dpfm_api_input_reader.SDC,
 	log *logger.Logger,
 ) *dpfm_api_output_formatter.Address {
-	where := fmt.Sprintf("WHERE address.AddressID = \"%s\"", input.Address.AddressID)
-	where := fmt.Sprintf("WHERE address.ValidityStartDate = \"%s\"", input.Address.ValidityStartDate)
-	where := fmt.Sprintf("WHERE address.ValidityEndDate = \"%s\"", input.Address.ValidityEndDate)
+
+	where := strings.Join([]string{
+		fmt.Sprintf("WHERE address.AddressID = %d ", input.Address.AddressID),
+		fmt.Sprintf("AND address.ValidityStartDate = \"%s\" ", input.Address.ValidityStartDate),
+		fmt.Sprintf("AND address.ValidityEndDate = \"%s\" ", input.Address.ValidityEndDate),
+	}, "")
+
 	rows, err := c.db.Query(
-		`SELECT *
-		FROM DataPlatformMastersAndTransactionsMysqlKube.data_platform_address_address_data as address 
+		`SELECT 
+    	address.addressID,
+    	address.validityStartDate,
+		address.validityEndDate,
+		FROM DataPlatformMastersAndTransactionsMysqlKube.data_platform_address_address_data as address
 		` + where + ` ;`)
 	if err != nil {
 		log.Error("%+v", err)
